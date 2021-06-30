@@ -43,6 +43,7 @@ beefy-gadget-rpc = { git = "https://github.com/octopus-network/grandpa-bridge-ga
 beefy-primitives = { git = "https://github.com/octopus-network/grandpa-bridge-gadget", branch = "octopus" }
 
 pallet-octopus-appchain = { git = "https://github.com/octopus-network/pallet-octopus-appchain", branch = "master" }
+pallet-atocha = { path="../pallets/atocha", version="3.0.0" }
 
 [dependencies.frame-benchmarking]
 git = 'https://github.com/paritytech/substrate.git'

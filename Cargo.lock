@@ -131,6 +131,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-benchmarking-cli",
  "jsonrpc-core",
+ "pallet-atocha",
  "pallet-im-online",
  "pallet-mmr-rpc",
  "pallet-octopus-appchain",
@@ -191,6 +192,7 @@ dependencies = [
  "hex-literal",
  "log",
  "pallet-assets",
+ "pallet-atocha",
  "pallet-authorship",
  "pallet-babe",
  "pallet-balances",
@@ -4060,6 +4062,21 @@ dependencies = [
  "frame-system",
  "max-encoded-len",
  "parity-scale-codec",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-atocha"
+version = "3.0.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "serde",
+ "sp-core",
+ "sp-io",
  "sp-runtime",
  "sp-std",
 ]
