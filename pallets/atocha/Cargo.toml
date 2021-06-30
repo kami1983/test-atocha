@@ -43,6 +43,10 @@ git = 'https://github.com/paritytech/substrate.git'
 rev = 'd6c33e7ec313f9bd5e319dc0a5a3ace5543f9617'
 version = '3.0.0'
 
+[dependencies.sp-std]
+default-features = false
+version = '3.0.0'
+
 [features]
 default = ['std']
 runtime-benchmarks = ['frame-benchmarking']
@@ -55,14 +59,14 @@ std = [
 try-runtime = ['frame-support/try-runtime']
 
 [package]
-authors = ['Substrate DevHub <https://github.com/substrate-developer-hub>']
-description = 'FRAME pallet template for defining custom runtime logic.'
+authors = ['Atocha-Group']
+description = 'Test with octopus.'
 edition = '2018'
 homepage = 'https://substrate.dev'
-license = 'Unlicense'
-name = 'pallet-template'
+license = 'MIT'
+name = 'pallet-atocha'
 readme = 'README.md'
-repository = 'https://github.com/substrate-developer-hub/substrate-appchain-barnacle/'
+repository = 'https://github.com/kami1983/test-atocha'
 version = '3.0.0'
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']

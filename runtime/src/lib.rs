@@ -61,6 +61,8 @@ use sp_runtime::traits::ConvertInto;
 /// Import the template pallet.
 pub use pallet_template;
 
+pub use pallet_atocha;
+
 /// An index to a block.
 pub type BlockNumber = u32;
 
@@ -122,7 +124,7 @@ pub mod opaque {
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("appchain"),
-	impl_name: create_runtime_str!("appchain-barnacle"),
+	impl_name: create_runtime_str!("appchain-atocha"),
 	authoring_version: 1,
 	// The version of the runtime specification. A full node will not attempt to use its native
 	//   runtime in substitute for the on-chain Wasm runtime unless all of `spec_name`,
@@ -506,6 +508,11 @@ impl pallet_template::Config for Runtime {
 	type Event = Event;
 }
 
+/// 定义我们的配置模块接口
+impl pallet_atocha::Config for Runtime {
+	type Event = Event;
+}
+
 parameter_types! {
 	pub const ImOnlineUnsignedPriority: TransactionPriority = TransactionPriority::max_value();
 	/// We prioritize im-online heartbeats over election solution submission.
@@ -653,6 +660,8 @@ construct_runtime!(
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
 		// Include the custom logic from the pallet-template in the runtime.
 		TemplateModule: pallet_template::{Pallet, Call, Storage, Event<T>},
+		// 引入 Atocha 的配置
+        AtochaModule: pallet_atocha::{Pallet, Call, Storage, Event<T>},
 	}
 );
 

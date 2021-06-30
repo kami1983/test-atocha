@@ -183,13 +183,16 @@ beefy-primitives = { git = "https://github.com/octopus-network/grandpa-bridge-ga
 pallet-beefy = { git = "https://github.com/octopus-network/grandpa-bridge-gadget", default-features = false, branch = "octopus" }
 pallet-octopus-appchain = { default-features = false, git = "https://github.com/octopus-network/pallet-octopus-appchain", branch = "master" }
 
+# 引入 atocha 模块
+pallet-atocha = { path = '../pallets/atocha', default-features = false, version = '3.0.0' }
+
 [package]
 authors = ['Octopus Network <hi@oct.network>']
 edition = '2018'
 homepage = 'https://oct.network'
 license = 'Apache-2.0'
-name = 'appchain-barnacle-runtime'
-repository = 'https://github.com/octopus-network/barnacle'
+name = 'appchain-atocha-runtime'
+repository = 'https://github.com/kami1983/test-atocha'
 version = '3.0.0'
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
@@ -249,4 +252,5 @@ std = [
     'beefy-primitives/std',
     'pallet-beefy/std',
     'pallet-octopus-appchain/std',
+    'pallet-atocha/std'
 ]

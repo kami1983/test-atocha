@@ -1,5 +1,5 @@
 use sp_core::{Pair, Public, sr25519};
-use appchain_barnacle_runtime::{
+use appchain_atocha_runtime::{
 	AccountId, BabeConfig, BalancesConfig, GenesisConfig, GrandpaConfig,
 	SudoConfig, SystemConfig, WASM_BINARY, Signature
 };
@@ -7,7 +7,7 @@ use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{Verify, IdentifyAccount};
 use sc_service::ChainType;
 
-use appchain_barnacle_runtime::{
+use appchain_atocha_runtime::{
 	ImOnlineConfig, SessionConfig, opaque::SessionKeys,
 	StakingConfig, Balance, DOLLARS,
 };
@@ -15,9 +15,9 @@ use sp_consensus_babe::{AuthorityId as BabeId};
 use sp_runtime::Perbill;
 use pallet_im_online::sr25519::{AuthorityId as ImOnlineId};
 use pallet_staking::StakerStatus;
-use appchain_barnacle_runtime::BeefyConfig;
+use appchain_atocha_runtime::BeefyConfig;
 use beefy_primitives::ecdsa::AuthorityId as BeefyId;
-use appchain_barnacle_runtime::OctopusAppchainConfig;
+use appchain_atocha_runtime::OctopusAppchainConfig;
 use pallet_octopus_appchain::AuthorityId as OctopusId;
 
 // The URL for the telemetry server.
@@ -242,7 +242,7 @@ fn testnet_genesis(
 		},
 		babe: BabeConfig {
 			authorities: vec![],
-			epoch_config: Some(appchain_barnacle_runtime::BABE_GENESIS_EPOCH_CONFIG),
+			epoch_config: Some(appchain_atocha_runtime::BABE_GENESIS_EPOCH_CONFIG),
 		},
 		im_online: ImOnlineConfig {
 			keys: vec![],

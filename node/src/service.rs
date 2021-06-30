@@ -4,7 +4,7 @@
 
 use std::sync::Arc;
 use sc_consensus_babe;
-use appchain_barnacle_runtime::{opaque::Block, RuntimeApi};
+use appchain_atocha_runtime::{opaque::Block, RuntimeApi};
 use sc_executor::native_executor_instance;
 pub use sc_executor::NativeExecutor;
 use sc_service::{
@@ -23,8 +23,8 @@ use beefy_primitives::ecdsa::AuthoritySignature as BeefySignature;
 // Our native executor instance.
 native_executor_instance!(
 	pub Executor,
-	appchain_barnacle_runtime::api::dispatch,
-	appchain_barnacle_runtime::native_version,
+	appchain_atocha_runtime::api::dispatch,
+	appchain_atocha_runtime::native_version,
 	frame_benchmarking::benchmarking::HostFunctions,
 );
 

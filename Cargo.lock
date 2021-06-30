@@ -121,16 +121,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "15af2628f6890fe2609a3b91bef4c83450512802e59489f9c1cb1fa5df064a61"
 
 [[package]]
-name = "appchain-barnacle"
+name = "appchain-atocha"
 version = "3.0.0"
 dependencies = [
- "appchain-barnacle-runtime",
+ "appchain-atocha-runtime",
  "beefy-gadget",
  "beefy-gadget-rpc",
  "beefy-primitives",
  "frame-benchmarking",
  "frame-benchmarking-cli",
  "jsonrpc-core",
+ "pallet-atocha",
  "pallet-im-online",
  "pallet-mmr-rpc",
  "pallet-octopus-appchain",
@@ -177,7 +178,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "appchain-barnacle-runtime"
+name = "appchain-atocha-runtime"
 version = "3.0.0"
 dependencies = [
  "beefy-primitives",
@@ -191,6 +192,7 @@ dependencies = [
  "hex-literal",
  "log",
  "pallet-assets",
+ "pallet-atocha",
  "pallet-authorship",
  "pallet-babe",
  "pallet-balances",
@@ -4060,6 +4062,21 @@ dependencies = [
  "frame-system",
  "max-encoded-len",
  "parity-scale-codec",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-atocha"
+version = "3.0.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "serde",
+ "sp-core",
+ "sp-io",
  "sp-runtime",
  "sp-std",
 ]

@@ -8,7 +8,7 @@
 use std::sync::Arc;
 
 use sp_keystore::SyncCryptoStorePtr;
-use appchain_barnacle_runtime::{opaque::Block, BlockNumber, AccountId, Index, Balance, Hash};
+use appchain_atocha_runtime::{opaque::Block, BlockNumber, AccountId, Index, Balance, Hash};
 use sc_consensus_babe::{Config, Epoch};
 use sc_consensus_babe_rpc::BabeRpcHandler;
 use sc_consensus_epochs::SharedEpochChanges;
