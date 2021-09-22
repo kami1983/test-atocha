@@ -2,9 +2,28 @@
 
 pub use pallet::*;
 
-// 首先通过 frame_support::pallet 宏创建 pallet
+#[cfg(test)]
+mod mock;
+
+#[cfg(test)]
+mod tests;
+
+
 #[frame_support::pallet]
 pub mod pallet {
+
+	pub type PuzzleRelationType = u8;
+	pub type PuzzleStatus = u8;
+	pub type PuzzleSubjectHash = Vec<u8>;
+	pub type PuzzleAnswerHash = Vec<u8>;
+	pub type PuzzleTicket = u64;
+
+	// 1=solving, 2=up to time, 3=solve
+	pub const PUZZLE_STATUS_IS_SOLVING: PuzzleStatus = 1;
+	pub const PUZZLE_STATUS_IS_UP_TO_TIME: PuzzleStatus = 2;
+	pub const PUZZLE_STATUS_IS_SOLVED: PuzzleStatus = 3;
+
+
 	// 引入需要的包
 	use frame_support::{
 		dispatch::DispatchResultWithPostInfo,
@@ -13,19 +32,12 @@ pub mod pallet {
 	// 比较粗暴的引用 frame_system 所有宏函数，和系统类型信息
 	use frame_system::pallet_prelude::*;
 	use sp_std::vec::Vec;
-
-	//创建配置接口，通过 config 宏完成
-	//继承自系统模块的 Config 接口，只有一个
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
-		// 只有一个关联类型就是 Event，并且约束
-		// 可以从本模块的Event 类型进行转换，并且它的类型是一个系统模块的Event 类型。
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 	}
 
-	// 定义一个结构体类型，来承载整个功能模块，使用 pallet::pallet 这个宏进行定义
 	#[pallet::pallet]
-	// 表示这个模块依赖的存储单元，一级存储单元依赖的 trait
 	#[pallet::generate_store(pub (super) trait Store)]
 	pub struct Pallet<T>(_);
 
@@ -34,24 +46,32 @@ pub mod pallet {
 	pub type Puzzle<T: Config> = StorageMap<
 		_,
 		Blake2_128Concat,
-		// Puzzle ID
 		Vec<u8>,
-		// Creator，RecodeJson （TODO:://未来可能需要线下存储先测试）,
 		( T::AccountId, Vec<u8> )
 	>;
 
-	// 通过 Event 定义一个时间存储类型，这是一个枚举。
+	#[pallet::storage]
+	#[pallet::getter(fn puzzle_relation)]
+	pub type PuzzleRelation<T: Config> = StorageMap<
+		_,
+		Blake2_128Concat,
+		T::AccountId,
+		// puzzle_hash, answer_hash, ticket (Balance type), relation_type (1=Creater, 2=Answer), status (1=solving, 2=up to time, 3=solve), create_bn, expired_bn
+		Vec<(PuzzleSubjectHash, PuzzleAnswerHash, PuzzleTicket, PuzzleRelationType, PuzzleStatus, u64, u64 )>,
+	>;
+
 	#[pallet::event]
-	// 生成一个 转换后的 metadata 方便前段接收
+	// Make a metadata, used by WebUI
 	#[pallet::metadata(T::AccountId = "AccountId")]
-	// 生成一个帮助性的方法，方便这个方法进行触发。
+	// Make a help methods, used by the caller
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		PuzzleCreated(T::AccountId, Vec<u8>),
+		// creator id, puzzle_hash, create block number , duration block number,
+		PuzzleCreated(T::AccountId, PuzzleSubjectHash, u64, u64),
 		PuzzleRevoked(T::AccountId, Vec<u8>),
 	}
 
-	// 通过 error 宏定义一个错误信息
+
 	#[pallet::error]
 	pub enum Error<T> {
 		// 定义一个错误信息，存证已经存在
@@ -63,37 +83,74 @@ pub mod pallet {
 		NotPuzzleOwner,
 	}
 
-	// 定义一个 hooks ，如果有初始化区块的信息可以放到这里面，如果没有这个也必须要加上否则会报错
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
 
-	// 构建可调用函数，通过 call 这个宏
 	#[pallet::call]
-	impl<T: Config> Pallet<T> {
+	impl<T: Config> Pallet<T>
+		where u64: From<<T as frame_system::Config>::BlockNumber>
+	{
 
+		// {
+		// "puzzle_hash": "QmYiqDpdbkekTsz1dFsgd5jpVcGqEmN6nmGuJ1tdCmJApQ",
+		// "answer_hash": "QmZvMUwrciwAgCrEpesLiiWz41TaMTsqzZF1Z74sLj6pFU",
+		// "relation_type": 1,
+		// "account_id": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+		// }
 
+		// (PuzzleSubjectHash,
+		// PuzzleAnswerHash,
+		// PuzzleTicket,
+		// PuzzleRelationType,
+		// PuzzleStatus,
+		// T::BlockNumber,
+		// T::BlockNumber )
 		#[pallet::weight(1234)]
 		pub fn create_puzzle(
-			// 这个参数表示交易的发送方
 			origin: OriginFor<T>,
-			// 题目的外部识别hash
-			puzzle_hash: Vec<u8>,
-			// 存储上链（暂时）
-			puzzle_content: Vec<u8>,
+			puzzle_owner: T::AccountId,
+			puzzle_hash: PuzzleSubjectHash,
+			answer_hash: PuzzleAnswerHash,
+			ticket: PuzzleTicket,
+			// relation type to identify the puzzle relation who create puzzle who answer puzzle.
+			relation_type: PuzzleRelationType,
+			duration: u64,
 		) -> DispatchResultWithPostInfo { // 返回值是一个Result类型的别名它会包含一些weight的信息，这是通过use引入进来的
-			// 验证签名信息是否合法
-			let sender = ensure_signed(origin)?;
-			// 判断存证信息是否存在
-			ensure!(!Puzzle::<T>::contains_key(&puzzle_hash), Error::<T>::PuzzleAlreadyExist);
-			// 插入存证
-			Puzzle::<T>::insert(
-				&puzzle_hash,
-				(sender.clone(), puzzle_content),
-			);
+			// check signer
+			let who = ensure_signed(origin)?;
 
-			// 发送事件
-			Self::deposit_event(Event::PuzzleCreated(sender, puzzle_hash));
-			// 返回结果信息，并进行类型转换。
+			// check current origin is creator or answer
+			let mut relation_type = 2;
+			if who == puzzle_owner {
+				relation_type = 1;
+			}
+
+			//
+			let current_block_number = <frame_system::Pallet<T>>::block_number();
+			let dration_block_number =  duration.checked_add(current_block_number.into()).unwrap();
+
+			type PuzzleRealtionContent = Vec<(PuzzleSubjectHash, PuzzleAnswerHash, PuzzleTicket, PuzzleRelationType, PuzzleStatus, u64, u64)>;
+
+			// check owner has exists
+ 			if <PuzzleRelation<T>>::contains_key(&puzzle_owner) {
+				// check puzzle_hash has exists
+				let mut puzzle_relation_vec: PuzzleRealtionContent = <PuzzleRelation<T>>::get(&puzzle_owner).unwrap();
+				let puzzle_exists = puzzle_relation_vec.iter().any(|(old_puzzle_hash, _, _, _, _, _, _,)| { old_puzzle_hash == &puzzle_hash });
+				// tip exists and break call.
+				ensure!(!puzzle_exists, Error::<T>::PuzzleAlreadyExist);
+				// add puzzle Vec<(PuzzleSubjectHash, PuzzleAnswerHash, PuzzleTicket, PuzzleRelationType, PuzzleStatus, T::BlockNumber, T::BlockNumber )>
+				puzzle_relation_vec.push((puzzle_hash.clone(), answer_hash, ticket, relation_type, PUZZLE_STATUS_IS_SOLVING, current_block_number.into(), dration_block_number ));
+				<PuzzleRelation<T>>::insert(&puzzle_owner, puzzle_relation_vec);
+			} else {
+				// create puzzle
+				let mut puzzle_relation_vec: PuzzleRealtionContent = Vec::new();
+				puzzle_relation_vec.push((puzzle_hash.clone(), answer_hash, ticket, relation_type, PUZZLE_STATUS_IS_SOLVING, current_block_number.into(), dration_block_number ));
+				<PuzzleRelation<T>>::insert(&puzzle_owner, puzzle_relation_vec);
+			}
+
+			// send event
+			Self::deposit_event(Event::PuzzleCreated(who, puzzle_hash, current_block_number.into(), dration_block_number));
+			//
 			Ok(().into())
 		}
 

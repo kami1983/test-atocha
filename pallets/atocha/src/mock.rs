@@ -1,4 +1,4 @@
-use crate as pallet_template;
+use crate as pallet_atocha;
 use sp_core::H256;
 use frame_support::parameter_types;
 use sp_runtime::{
@@ -17,7 +17,7 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		TemplateModule: pallet_template::{Pallet, Call, Storage, Event<T>},
+		AtochaModule: pallet_atocha::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -52,7 +52,7 @@ impl system::Config for Test {
 	type OnSetCode = ();
 }
 
-impl pallet_template::Config for Test {
+impl pallet_atocha::Config for Test {
 	type Event = Event;
 }
 
