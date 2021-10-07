@@ -5,6 +5,7 @@ panic = 'unwind'
 members = [
     'node',
     'pallets/template',
+    'pallets/atocha',
     'runtime',
 ]
 
