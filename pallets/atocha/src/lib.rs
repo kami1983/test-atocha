@@ -2,6 +2,14 @@
 
 pub use pallet::*;
 
+use frame_support::sp_runtime::app_crypto::{Pair, Ss58Codec, TryFrom};
+use frame_support::sp_runtime::traits::{IdentifyAccount, Verify};
+use frame_support::sp_runtime::MultiSignature;
+use frame_support::sp_runtime::MultiSigner;
+use sp_application_crypto::sr25519;
+use sp_application_crypto::sr25519::Public;
+use sp_application_crypto::sr25519::Signature;
+
 #[cfg(test)]
 mod mock;
 
@@ -32,9 +40,10 @@ pub mod pallet {
     pub const PUZZLE_STATUS_IS_UP_TO_TIME: PuzzleStatus = 2;
     pub const PUZZLE_STATUS_IS_SOLVED: PuzzleStatus = 3;
 
-    // 引入需要的包
+    // Default maximum is a week.
+    pub const MAXIMUM_WAITING_BLOCK_NUM: u64 = 100800;
+
     use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
-    // 比较粗暴的引用 frame_system 所有宏函数，和系统类型信息
     use frame_system::pallet_prelude::*;
     use sp_std::vec::Vec;
     #[pallet::config]
@@ -113,6 +122,7 @@ pub mod pallet {
         AnswerAlreadyExist,
         PuzzleNotExist,
         NotPuzzleOwner,
+        RevealTooLate,
     }
 
     #[pallet::hooks]
@@ -210,6 +220,8 @@ pub mod pallet {
                 Error::<T>::PuzzleNotExist
             );
 
+            // TODO:: Get puzzle info, and confirm it in the answer block area yet.
+
             let mut answer_store_list: Vec<AnswerContent<T>> = Vec::new();
             let answer_list_opt = <PuzzleDirectAnswer<T>>::get(&puzzle_hash);
             if let Some(answer_list) = answer_list_opt {
@@ -243,5 +255,54 @@ pub mod pallet {
             //
             Ok(().into())
         }
+
+        #[pallet::weight(1234)]
+        pub fn reveal_puzzle(
+            origin: OriginFor<T>,
+            puzzle_hash: PuzzleSubjectHash,
+            answer_hash: PuzzleAnswerHash,
+            answer_nonce: PuzzleAnswerNonce,
+        ) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+
+            // Puzzle need exists.
+            ensure!(
+                <PuzzleInfo<T>>::contains_key(&puzzle_hash),
+                Error::<T>::PuzzleNotExist
+            );
+
+            // Get puzzle info
+            let (account_id, _, answer_signed, _, _, puzzle_status, create_bn, duration_bn, ..) =
+                <PuzzleInfo<T>>::get(&puzzle_hash).unwrap();
+
+            // status check
+            if PUZZLE_STATUS_IS_SOLVING == puzzle_status {}
+
+            // get current block number
+            let current_block = <frame_system::Pallet<T>>::block_number();
+            // exceeded the maximum waiting block number. //TODO:: not need.
+            // let current_block: u64 = current_block.into();
+            // ensure!(
+            //     current_block > (create_bn + duration_bn + MAXIMUM_WAITING_BLOCK_NUM),
+            //     Error::<T>::RevealTooLate
+            // );
+
+            // TODO:: developer code.
+
+            // check duration stauts
+
+            Ok(().into())
+        }
+    }
+}
+
+impl<T: Config> Pallet<T> {
+    fn check_signed_valid(public_id: Public, signature: &[u8], msg: &[u8]) -> bool {
+        let signature = Signature::try_from(signature);
+        let signature = signature.unwrap();
+
+        let multi_sig = MultiSignature::from(signature); // OK
+        let multi_signer = MultiSigner::from(public_id);
+        multi_sig.verify(msg, &multi_signer.into_account())
     }
 }

@@ -123,13 +123,36 @@ fn test_answer_puzzle() {
 }
 
 #[test]
+fn test_reveal_signed_valid() {
+    new_test_ext().execute_with(|| {
+        use frame_support::sp_runtime::app_crypto::{Pair, Ss58Codec, TryFrom};
+        use sp_application_crypto::sr25519::Public;
+
+        let test_signature = &hex::decode("2aeaa98e26062cf65161c68c5cb7aa31ca050cb5bdd07abc80a475d2a2eebc7b7a9c9546fbdff971b29419ddd9982bf4148c81a49df550154e1674a6b58bac84").expect("Hex invalid")[..];
+        let public_id =  Public::from_ss58check("5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty").unwrap();
+        assert!(AtochaModule::check_signed_valid(public_id, test_signature, "This is a text message".as_bytes()));
+    });
+}
+
+#[test]
 fn test_reveal_puzzle() {
+    new_test_ext().execute_with(|| {
+        System::set_block_number(5);
+    });
+}
+
+#[test]
+fn test_signed_method() {
     new_test_ext().execute_with(|| {
         System::set_block_number(5);
         //
         use sp_application_crypto::sr25519;
+        use sp_application_crypto::sr25519::Signature;
         use sp_runtime::MultiSignature;
         use sp_runtime::MultiSigner;
+        use frame_support::sp_runtime::app_crypto::{Pair, Ss58Codec, TryFrom};
+        use frame_support::sp_runtime::traits::{IdentifyAccount, Verify};
+        use sp_application_crypto::sr25519::Public;
 
         // sp_core::sr25519::Pair(schnorrkel::Keypair).;
 
@@ -162,10 +185,11 @@ fn test_reveal_puzzle() {
         let signature = Signature::try_from(test_signature);
         let signature = signature.unwrap();
         println!(" signature = {:?}", signature);
-        let account_result =  AccountId::from_ss58check("5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty");
 
-        let account_id = account_result.unwrap();
-        println!(" account_id = {:?} ", account_id);
+        // let account_result =  AccountId::from_ss58check("5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty");
+        // let account_id = account_result.unwrap();
+        // println!(" account_id = {:?} ", account_id);
+
         let public_id = Public::from_ss58check("5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty");
         let public_id = public_id.unwrap();
         println!(" public_id = {:?} ", public_id);
@@ -173,7 +197,6 @@ fn test_reveal_puzzle() {
         let multi_sig = MultiSignature::from(signature); // OK
         let multi_signer = MultiSigner::from(public_id);
         assert!(multi_sig.verify("This is a text message".as_bytes(), &multi_signer.into_account()));
-
     });
 }
 

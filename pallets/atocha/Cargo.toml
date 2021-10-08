@@ -49,7 +49,7 @@ version = '3.0.0'
 
 [dependencies]
 sp-application-crypto = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", rev = 'd6c33e7ec313f9bd5e319dc0a5a3ace5543f9617' }
-
+hex = { version = "0.4", default-features = false, optional = true }
 
 [features]
 default = ['std']
@@ -60,6 +60,7 @@ std = [
     'frame-system/std',
     'frame-benchmarking/std',
     'sp-application-crypto/std',
+    'hex/std',
 ]
 try-runtime = ['frame-support/try-runtime']
 
