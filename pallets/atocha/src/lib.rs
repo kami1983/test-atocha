@@ -2,7 +2,7 @@
 
 pub use pallet::*;
 
-use frame_support::sp_runtime::app_crypto::{Pair, Ss58Codec, TryFrom};
+use frame_support::sp_runtime::app_crypto::TryFrom;
 use frame_support::sp_runtime::traits::{IdentifyAccount, Verify};
 use frame_support::sp_runtime::MultiSignature;
 use frame_support::sp_runtime::MultiSigner;
@@ -101,7 +101,7 @@ pub mod pallet {
     >;
 
     #[pallet::event]
-    // Make a metadata, used by WebUI
+    // Make a metadata, used by WebUIf
     #[pallet::metadata(T::AccountId = "AccountId")]
     // Make a help methods, used by the caller
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
@@ -121,6 +121,7 @@ pub mod pallet {
         PuzzleAlreadyExist,
         AnswerAlreadyExist,
         PuzzleNotExist,
+        AnswerPeriodHasExpired,
         NotPuzzleOwner,
         RevealTooLate,
     }
@@ -203,7 +204,7 @@ pub mod pallet {
             let who = ensure_signed(origin)?;
 
             //
-            let current_block_number = <frame_system::Pallet<T>>::block_number();
+            let current_block_number: u64 = <frame_system::Pallet<T>>::block_number().into();
 
             //(T::AccountId, PuzzleAnswerHash, PuzzleTicket, PuzzleAnswerStatus, CreateBn)
             type AnswerContent<T> = (
@@ -220,7 +221,14 @@ pub mod pallet {
                 Error::<T>::PuzzleNotExist
             );
 
-            // TODO:: Get puzzle info, and confirm it in the answer block area yet.
+            // Get puzzle
+            let (account_id, _, answer_signed, _, _, puzzle_status, create_bn, duration_bn, ..) =
+                <PuzzleInfo<T>>::get(&puzzle_hash).unwrap();
+
+            ensure!(
+                current_block_number <= duration_bn,
+                Error::<T>::AnswerPeriodHasExpired
+            );
 
             let mut answer_store_list: Vec<AnswerContent<T>> = Vec::new();
             let answer_list_opt = <PuzzleDirectAnswer<T>>::get(&puzzle_hash);

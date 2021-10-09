@@ -2,6 +2,7 @@ use super::Event as AtochaEvent;
 use crate::pallet::*;
 use crate::{mock::*, Error};
 use frame_support::{assert_noop, assert_ok};
+use sp_runtime::AccountId32;
 
 const CONST_ORIGIN_IS_CREATOR: u64 = 1;
 const CONST_ORIGIN_IS_ANSWER_1: u64 = 2;
@@ -88,6 +89,21 @@ fn test_answer_puzzle() {
             50,
         );
 
+        // Set the end of the answer period.
+        System::set_block_number(5 + 50 + 1);
+
+        assert_noop!(
+            // Try to call create answer, but answer period has expired.
+            AtochaModule::answer_puzzle(
+                Origin::signed(CONST_ORIGIN_IS_ANSWER_1),
+                toVec("PUZZLE_HASH"),
+                toVec("ANSWER_HASH"),
+                500,
+            ),
+            Error::<Test>::AnswerPeriodHasExpired
+        );
+
+        System::set_block_number(5);
         // add answer
         // origin: OriginFor<T>,
         // puzzle_hash: PuzzleSubjectHash,
@@ -123,7 +139,7 @@ fn test_answer_puzzle() {
 }
 
 #[test]
-fn test_reveal_signed_valid() {
+fn test_handler_reveal_signed_valid() {
     new_test_ext().execute_with(|| {
         use frame_support::sp_runtime::app_crypto::{Pair, Ss58Codec, TryFrom};
         use sp_application_crypto::sr25519::Public;
@@ -137,7 +153,60 @@ fn test_reveal_signed_valid() {
 #[test]
 fn test_reveal_puzzle() {
     new_test_ext().execute_with(|| {
-        System::set_block_number(5);
+        use frame_support::sp_runtime::app_crypto::{ed25519, sr25519, Pair, Ss58Codec};
+        use frame_support::sp_runtime::traits::{IdentifyAccount, Verify};
+        use sp_application_crypto::sr25519::Public;
+        use sp_runtime::MultiSignature;
+        use sp_runtime::MultiSigner;
+
+        let account_pair = sr25519::Pair::from_string("//Alice", None).unwrap();
+        let make_public = account_pair.public();
+        let make_signature = account_pair.sign("This is a text message".as_bytes());
+        let multi_sig = MultiSignature::from(make_signature); // OK
+        let multi_signer = MultiSigner::from(make_public);
+        assert!(multi_sig.verify(
+            "This is a text message".as_bytes(),
+            &multi_signer.into_account()
+        ));
+
+        let puzzle_hash = "PUZZLE_HASH";
+        let answer_hash = "ANSWER_HASH";
+        let answer_nonce = "NONCE";
+
+        let mut puzzle_hash_vec = toVec(puzzle_hash);
+        puzzle_hash_vec.append(&mut toVec(answer_nonce));
+        // let linked_str = sp_std::str::from_utf8(&puzzle_hash_vec);
+        // println!("linked_str = {:?}", linked_str);
+        assert_eq!(
+            Ok("PUZZLE_HASHNONCE"),
+            sp_std::str::from_utf8(&puzzle_hash_vec)
+        );
+
+        let make_signer = account_pair.sign(&puzzle_hash_vec);
+        println!("make_signer = {:?}", make_signer);
+
+        // System::set_block_number(5);
+        //
+        // // Create puzzle hash on the chain.
+        // handle_create_puzzle(
+        //     CONST_ORIGIN_IS_CREATOR,
+        //     "PUZZLE_HASH",
+        //     "ANSWER_SIGNED",
+        //     "NONCE",
+        //     10,
+        //     50,
+        // );
+        //
+        // assert_noop!(
+        //     // Try to call create answer, but answer period has expired.
+        //     AtochaModule::answer_puzzle(
+        //         Origin::signed(CONST_ORIGIN_IS_ANSWER_1),
+        //         toVec("PUZZLE_HASH"),
+        //         toVec("ANSWER_HASH"),
+        //         500,
+        //     ),
+        //     Error::<Test>::AnswerPeriodHasExpired
+        // );
     });
 }
 
@@ -197,6 +266,18 @@ fn test_signed_method() {
         let multi_sig = MultiSignature::from(signature); // OK
         let multi_signer = MultiSigner::from(public_id);
         assert!(multi_sig.verify("This is a text message".as_bytes(), &multi_signer.into_account()));
+
+        //
+        let account_pair = sr25519::Pair::from_string("blur pioneer frown science banana impose avoid law act strategy have bronze//2//stash", None).unwrap();
+        let make_public = account_pair.public();
+        let make_signature = account_pair.sign("This is a text message".as_bytes());
+        let multi_sig = MultiSignature::from(make_signature); // OK
+        let multi_signer = MultiSigner::from(make_public);
+        assert!(multi_sig.verify("This is a text message".as_bytes(), &multi_signer.into_account()));
+
+        // println!("make_signature = {:?}", make_signature);
+        // verify
+
     });
 }
 
