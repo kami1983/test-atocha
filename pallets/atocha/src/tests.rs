@@ -2,6 +2,7 @@ use super::Event as AtochaEvent;
 use crate::pallet::*;
 use crate::{mock::*, Error};
 use frame_support::{assert_noop, assert_ok};
+use sp_core::sr25519::Public;
 use sp_runtime::AccountId32;
 
 const CONST_ORIGIN_IS_CREATOR: u64 = 1;
@@ -153,60 +154,53 @@ fn test_handler_reveal_signed_valid() {
 #[test]
 fn test_reveal_puzzle() {
     new_test_ext().execute_with(|| {
-        use frame_support::sp_runtime::app_crypto::{ed25519, sr25519, Pair, Ss58Codec};
-        use frame_support::sp_runtime::traits::{IdentifyAccount, Verify};
-        use sp_application_crypto::sr25519::Public;
-        use sp_runtime::MultiSignature;
-        use sp_runtime::MultiSigner;
-
-        let account_pair = sr25519::Pair::from_string("//Alice", None).unwrap();
-        let make_public = account_pair.public();
-        let make_signature = account_pair.sign("This is a text message".as_bytes());
-        let multi_sig = MultiSignature::from(make_signature); // OK
-        let multi_signer = MultiSigner::from(make_public);
-        assert!(multi_sig.verify(
-            "This is a text message".as_bytes(),
-            &multi_signer.into_account()
-        ));
-
         let puzzle_hash = "PUZZLE_HASH";
         let answer_hash = "ANSWER_HASH";
         let answer_nonce = "NONCE";
+        //
+        let mut answer_hash_vec = toVec(answer_hash);
+        answer_hash_vec.append(&mut toVec(answer_nonce));
 
-        let mut puzzle_hash_vec = toVec(puzzle_hash);
-        puzzle_hash_vec.append(&mut toVec(answer_nonce));
-        // let linked_str = sp_std::str::from_utf8(&puzzle_hash_vec);
-        // println!("linked_str = {:?}", linked_str);
-        assert_eq!(
-            Ok("PUZZLE_HASHNONCE"),
-            sp_std::str::from_utf8(&puzzle_hash_vec)
+        // let make_signer = account_pair.sign(&answer_hash_vec);
+        let (make_public, make_signer) = makeSigner("//Alice", answer_hash, answer_nonce);
+        assert!(AtochaModule::check_signed_valid(
+            make_public.clone(),
+            make_signer.clone().as_slice(),
+            answer_hash_vec.clone().as_slice()
+        ));
+
+        let answer_signed = hex::encode(make_signer);
+
+        // println!("make_signer = {:?}", hex make_signer);
+        // println!("make_signer = {:?}", answer_signed.as);
+
+        // Create puzzle hash on the chain.
+        handle_create_puzzle(
+            CONST_ORIGIN_IS_CREATOR,
+            puzzle_hash.clone(),
+            answer_signed.as_str(),
+            answer_nonce.clone(),
+            10,
+            50,
         );
 
-        let make_signer = account_pair.sign(&puzzle_hash_vec);
-        println!("make_signer = {:?}", make_signer);
+        // Create answer hash on the chain
+        AtochaModule::answer_puzzle(
+            Origin::signed(CONST_ORIGIN_IS_ANSWER_1),
+            toVec(puzzle_hash),
+            toVec(answer_nonce),
+            500,
+        )
 
-        // System::set_block_number(5);
-        //
-        // // Create puzzle hash on the chain.
-        // handle_create_puzzle(
-        //     CONST_ORIGIN_IS_CREATOR,
-        //     "PUZZLE_HASH",
-        //     "ANSWER_SIGNED",
-        //     "NONCE",
-        //     10,
-        //     50,
-        // );
-        //
-        // assert_noop!(
-        //     // Try to call create answer, but answer period has expired.
-        //     AtochaModule::answer_puzzle(
-        //         Origin::signed(CONST_ORIGIN_IS_ANSWER_1),
-        //         toVec("PUZZLE_HASH"),
-        //         toVec("ANSWER_HASH"),
-        //         500,
-        //     ),
-        //     Error::<Test>::AnswerPeriodHasExpired
-        // );
+        // Check puzzle status.
+
+        // Check answer status.
+
+        // Reveal puzzle.
+
+        // Check puzzle stauts.
+
+        // Check answer status.
     });
 }
 
@@ -275,9 +269,6 @@ fn test_signed_method() {
         let multi_signer = MultiSigner::from(make_public);
         assert!(multi_sig.verify("This is a text message".as_bytes(), &multi_signer.into_account()));
 
-        // println!("make_signature = {:?}", make_signature);
-        // verify
-
     });
 }
 
@@ -309,6 +300,35 @@ fn handle_create_puzzle(
 
 fn toVec(to_str: &str) -> Vec<u8> {
     to_str.as_bytes().to_vec()
+}
+
+fn makeSigner(seed_str: &str, answer_hash: &str, answer_nonce: &str) -> (Public, Vec<u8>) {
+    use frame_support::sp_runtime::app_crypto::{Pair, Ss58Codec, TryFrom};
+    use frame_support::sp_runtime::traits::{IdentifyAccount, Verify};
+    use sp_application_crypto::sr25519;
+    use sp_application_crypto::sr25519::Public;
+    use sp_application_crypto::sr25519::Signature;
+    use sp_runtime::MultiSignature;
+    use sp_runtime::MultiSigner;
+
+    let account_pair = sr25519::Pair::from_string("//Alice", None).unwrap();
+    let make_public = account_pair.public();
+
+    let puzzle_hash = "PUZZLE_HASH";
+    let answer_hash = "ANSWER_HASH";
+    let answer_nonce = "NONCE";
+
+    let mut answer_hash_vec = toVec(answer_hash);
+    answer_hash_vec.append(&mut toVec(answer_nonce));
+    // let linked_str = sp_std::str::from_utf8(&puzzle_hash_vec);
+    // println!("linked_str = {:?}", linked_str);
+    // assert_eq!(
+    //     Ok("ANSWER_HASHNONCE"),
+    //     sp_std::str::from_utf8(&answer_hash_vec)
+    // );
+
+    let make_signer = account_pair.sign(&answer_hash_vec);
+    (make_public, make_signer.0.to_vec())
 }
 
 // #[test]
